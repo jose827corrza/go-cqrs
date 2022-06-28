@@ -13,32 +13,33 @@ import (
 )
 
 type Config struct {
-	PostgresDB       string `json:"POSTGRES_DB"`
-	PostgresUser     string `json:"POSTGRES_USER"`
-	PostgresPassword string `json:"POSTGRES_PASSWORD"`
-	NatsAddress      string `json:"NATS_ADDRESS"`
+	PostgresDB       string `envconfig:"POSTGRES_DB"`
+	PostgresUser     string `envconfig:"POSTGRES_USER"`
+	PostgresPassword string `envconfig:"POSTGRES_PASSWORD"`
+	NatsAddress      string `envconfig:"NATS_ADDRESS"`
+}
+
+func newRouter() (router *mux.Router) {
+	router = mux.NewRouter()
+	router.HandleFunc("/feeds", createFeedHandler).Methods(http.MethodPost)
+	return
 }
 
 func main() {
-	var config Config
-	err := envconfig.Process("", &config)
+	var cfg Config
+	err := envconfig.Process("", &cfg)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatal(err)
 	}
 
-	addr := fmt.Sprintf("postgress://%s:%s@postgress/%s?sslmode=disable",
-		config.PostgresUser,
-		config.PostgresPassword,
-		config.PostgresDB)
+	addr := fmt.Sprintf("postgres://%s:%s@postgres/%s?sslmode=disable", cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB)
 	repo, err := database.NewPostgresRepository(addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	repository.SetRepository(repo)
 
-	//Ahora el NATS
-	natAddr := fmt.Sprintf("nats://%s", config.NatsAddress)
-	n, err := events.NewNats(natAddr)
+	n, err := events.NewNats(fmt.Sprintf("nats://%s", cfg.NatsAddress))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,15 +47,9 @@ func main() {
 
 	defer events.Close()
 
-	//Router
 	router := newRouter()
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal(err)
 	}
-}
 
-func newRouter() (router *mux.Router) {
-	router = mux.NewRouter()
-	router.HandleFunc("/feeds", CreateFeedHandler).Methods(http.MethodPost)
-	return
 }

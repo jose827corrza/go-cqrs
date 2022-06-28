@@ -23,7 +23,7 @@ func onCreatedFeed(msg events.CreatedFeedMessage) {
 	}
 }
 
-func listFeedHandler(w http.ResponseWriter, req *http.Request) {
+func listFeedsHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	feeds, err := repository.ListFeed(req.Context())
 	if err != nil {

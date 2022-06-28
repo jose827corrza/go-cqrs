@@ -14,7 +14,7 @@ type ElasticSearchRepository struct {
 	client *elastic.Client
 }
 
-func NewElasticSearchRepository(url string) (*ElasticSearchRepository, error) {
+func NewElastic(url string) (*ElasticSearchRepository, error) {
 	client, err := elastic.NewClient(elastic.Config{
 		Addresses: []string{url},
 	})
